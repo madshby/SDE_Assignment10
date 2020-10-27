@@ -3,13 +3,20 @@ package sample.model;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.util.LocalDateAdapter;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.io.File;
 import java.time.LocalDate;
 
 public class Task {
-    private StringProperty description;
-    private ObjectProperty<LocalDate> dueDate;
-    private BooleanProperty isCompleted;
+    private final StringProperty description;
+    private final ObjectProperty<LocalDate> dueDate;
+    private final BooleanProperty isCompleted;
 
     public Task() {
         this("");
@@ -46,6 +53,7 @@ public class Task {
         this.description.set(description);
     }
 
+    @XmlJavaTypeAdapter(LocalDateAdapter.class)
     public LocalDate getDueDate() {
         return dueDate.get();
     }
@@ -70,12 +78,23 @@ public class Task {
         this.setIsCompleted(true);
     }
 
-    public static void saveTasks(ObservableList<Task> tasks) {
-        //TODO
+    public static void saveTasks(ObservableList<Task> tasks) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(TaskListWrapper.class);
+        Marshaller m = context.createMarshaller();
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        TaskListWrapper wrapper = new TaskListWrapper();
+        wrapper.setTasks(tasks);
+        m.marshal(wrapper, new File("Tasks.xml"));
     }
 
-    public static ObservableList<Task> loadTasks() {
-        //TODO
-        return FXCollections.observableArrayList();
+    public static ObservableList<Task> loadTasks() throws JAXBException {
+        File file = new File("Tasks.xml");
+        if (!file.exists()) {
+            return FXCollections.observableArrayList();
+        }
+        JAXBContext context = JAXBContext.newInstance(TaskListWrapper.class);
+        Unmarshaller um = context.createUnmarshaller();
+        TaskListWrapper wrapper = (TaskListWrapper)um.unmarshal(file);
+        return FXCollections.observableArrayList(wrapper.getTasks());
     }
 }

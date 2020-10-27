@@ -8,6 +8,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import sample.model.Task;
 
+import javax.xml.bind.JAXBException;
 import java.time.LocalDate;
 
 public class TaskOverviewController {
@@ -34,7 +35,7 @@ public class TaskOverviewController {
 
     @FXML
     public void initialize() {
-        this.tasks = Task.loadTasks();
+        this.loadTasks();
 
         this.taskTable.setItems(this.tasks);
         this.taskTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -44,6 +45,22 @@ public class TaskOverviewController {
         this.descriptionColumn.setCellValueFactory(cellData -> cellData.getValue().getDescriptionProperty());
         this.dueDateColumn.setCellValueFactory(cellData -> cellData.getValue().getDueDateProperty());
         this.isCompletedColumn.setCellValueFactory(cellData -> cellData.getValue().getIsCompletedProperty());
+    }
+
+    private void loadTasks() {
+        try {
+            this.tasks = Task.loadTasks();
+        } catch (JAXBException ex) {
+            showError(ex);
+        }
+    }
+
+    private void saveTasks() {
+        try {
+            Task.saveTasks(this.tasks);
+        } catch (JAXBException ex) {
+            showError(ex);
+        }
     }
 
     @FXML
@@ -56,7 +73,7 @@ public class TaskOverviewController {
         String newDescription = input.showAndWait().get();
 
         this.tasks.add( new Task(newDescription) );
-        Task.saveTasks(this.tasks);
+        this.saveTasks();
     }
 
     @FXML
@@ -67,7 +84,7 @@ public class TaskOverviewController {
         }
 
         this.selectedTask.postpone(1);
-        Task.saveTasks(this.tasks);
+        this.saveTasks();
     }
 
     @FXML
@@ -78,7 +95,7 @@ public class TaskOverviewController {
         }
 
         this.selectedTask.postpone(30);
-        Task.saveTasks(this.tasks);
+        this.saveTasks();
     }
 
     @FXML
@@ -89,7 +106,7 @@ public class TaskOverviewController {
         }
 
         this.selectedTask.complete();
-        Task.saveTasks(this.tasks);
+        this.saveTasks();
     }
 
     private void showMissingSelectionWarning() {
